@@ -1,0 +1,5 @@
+/*
+ karma-concat-preprocessor v0.1.0
+ (c) 2015-2016 JCThePants http://github.com/JCThePants/karma-concat-preprocessor
+ License: MIT
+*/
