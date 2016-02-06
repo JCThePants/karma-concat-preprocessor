@@ -7,114 +7,119 @@ module.exports = {
     'preprocessor:concat': ['factory', initPreprocessor]
 };
 
-// initialize
-function initPreprocessor (basePath, config, logger) {
+// concatenate
+function concat(info, basePath, config) {
 
-    var log = logger.create('preprocessor.concat');
+    var contents,
+        file   = getFilePath(basePath, info.file),
+        files  = getGlobFiles(info.inputs || info.inputFiles),
+        footer = info.footer || config.footer,
+        header = info.header || config.header,
+        result;
 
-    if (!config.outputs) {
-        log.warn('concat preprocessor config requires "outputs" to be specified.');
-    }
-
-    if (!(config.outputs instanceof Array)) {
-        log.warn('concat preprocessor config "outputs" property value must be an Array of objects.');
-        return;
-    }
-
-    var header = config.header,
-        footer = config.footer,
-        concats = {};
-
+    // add default header and footer if none specified
     if (typeof header === 'undefined' && typeof footer === 'undefined') {
         header = '(function () {\n';
         footer = '\n}());\n';
     }
 
-    for (var i=0; i < config.outputs.length; i++) {
+    // get contents of input files
+    contents = files.map(function (file) {
+        return fs.readFileSync(file).toString();
+    });
 
-        var info = setupConcat(config.outputs[i], log, header, footer);
-        if (info) {
-            info.concat();
+    // concat file contents
+    result = (header || '') + contents.join('\n\n') + (footer || '');
 
-            for (var j = 0; j < info.outputs.length; j++) {
-                concats[basePath + '/' + info.outputs[j]] = info;
-            }
-        }
+    // write to output file
+    fs.writeFileSync(file, result);
+
+    return result;
+}
+
+// get file path including base path
+function getFilePath(basePath, file) {
+    return (basePath ? basePath + '/' : '') + file;
+}
+
+// convert array of glob and non-glob file names to array of matched file names.
+function getGlobFiles(files) {
+    var results = [];
+    files.map(function (file) {
+
+        file = file.replace('\\', '/');
+
+        var globFiles = glob(file, { sync: true });
+        Array.prototype.push.apply(results, globFiles);
+    });
+    return results;
+}
+
+
+// initialize
+function initPreprocessor (basePath, config, logger) {
+
+    if (!validateConfig(config, logger))
+        return;
+
+    var outputMap = {},
+        outputs = config.outputs,
+        i;
+
+    // map output files
+    for (i = 0; i < outputs.length; i++) {
+        var file = getFilePath(basePath, outputs[i].file);
+        outputMap[file] = outputs[i];
     }
 
     // preprocessor
     return function (content, file, done) {
-        var path = file.path;
-        if (concats[path]) {
-            return done(concats[path].concat());
+        var mapped = outputMap[file.path];
+        if (mapped) {
+            return done(concat(mapped, basePath, config));
         }
         return done(content);
     }
 }
 
-// setup file concatenation and return info used to concat
-function setupConcat(concatInfo, log, header, footer) {
+// ensure concat config is correct
+function validateConfig(config, logger) {
 
-    if (!concatInfo.file) {
-        log.warn('concat "outputs" array item did not have required "file" property set.');
-        return null;
+    var log = logger.create('preprocessor.concat');
+
+    if (!config) {
+        log.warn('concat preprocessor config required.');
+        return false;
     }
 
-    if (!concatInfo.inputFiles) {
-        log.warn('concat "outputs" array item did not have required "inputFiles" property set.');
-        return null;
+    if (!config.outputs) {
+        log.warn('concat preprocessor config requires "outputs" to be specified.');
+        return false;
     }
 
-    if (!(concatInfo.inputFiles instanceof Array)) {
-        log.warn('concat "outputs" array items "inputFiles" property must be an array of file paths to concat.');
-        return null;
+    if (!(config.outputs instanceof Array)) {
+        log.warn('concat preprocessor config "outputs" property value must be an Array of objects.');
+        return false;
     }
 
-    var inputs = concatInfo.inputFiles,
-        outputs = concatInfo.file,
-        files = [];
+    for (var i = 0; i < config.outputs.length; i++) {
+        var output = config.outputs[i];
 
-    outputs = outputs instanceof Array ? outputs : [outputs];
-    header = concatInfo.header || header || '';
-    footer = concatInfo.footer || footer || '';
-
-    inputs.map(function (file) {
-
-        file = file.replace('\\', '/');
-        var result = glob(file, { sync: true });
-
-        for (var i = 0; i < result.length; i++) {
-            files.push(result[i]);
+        if (!output.file) {
+            log.warn('Missing "file" property in config output.');
+            return false;
         }
-        return file;
-    });
 
-    var info = {
-        header: header,
-        footer: footer,
-        files: files,
-        outputs: outputs,
-        concat: function () {
-            return concat(info, log);
+        if (!output.inputs && !output.inputFiles) {
+            log.warn('Missing "inputs" property in config output.');
+            return false;
         }
-    };
 
-    return info;
-}
+        if (!(output.inputs instanceof Array) && !(output.inputFiles instanceof Array)) {
+            log.warn('concat "outputs" array items "inputs" property must be an array of file paths.');
+            return null;
+        }
+    }
 
-// concatenate
-function concat(info, log) {
-    var out = info.files.map(function (file) {
-            log.debug('   Reading ' + file);
-            return fs.readFileSync(file).toString();
-        }),
-        result = info.header + out.join('\n\n') + info.footer;
-
-    // write to outputs
-    info.outputs.map(function (output) {
-        log.debug('Writing to ' + output);
-        fs.writeFileSync(output, result);
-    });
-
-    return result;
+    return true;
 }

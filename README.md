@@ -1,10 +1,6 @@
 # karma-concat-preprocessor
 File concatenation preprocessor for [Karma JavaScript runner](https://github.com/karma-runner/karma)
 
-Under normal circumstances, concatenation is not necessary. The primary benefit of this concat preprocessor is the 
-ability to add a header and footer the the concatenated files. This allows adding closures to prevent unbuilt source file variable names from 
-interfering with variable names in other libraries that may be included.
-
 ## Installation
     npm install karma-concat-preprocessor --save-dev
     
@@ -20,7 +16,7 @@ Firstly, you will need to include entries in the `plugins` property and `preproc
         '**/*': ['concat']
     }
     
-It is ok to allow all files to be processed by the concat preprocessor since it will only affect the files it has been configured to concatenate.
+It's ok to allow all files to be processed by the concat preprocessor since it will only affect the files it has been configured to concatenate.
 
 ### Add Output Files
 
@@ -41,12 +37,12 @@ Now you will need to configure which files will be concatenated into the output(
         
             // output file configuration
             {
-                file: 'concats/concatenated.js' // The output file
-                inputFiles: [
+                file: 'concats/concatenated.js' // The output file (cannot be a glob)
+                inputs: [
                     'src/file1.js',
                     'src/file2.js',
                     'src/file3.js',
-                    'src/file4.js',
+                    'src/file4.js'
                 ]
             },
             
@@ -54,11 +50,8 @@ Now you will need to configure which files will be concatenated into the output(
             // additional items to the array: (Don't forget to add the output file to the 'files' property)
             {
                 file: 'concats/concatenated2.js' // The output file
-                inputFiles: [
-                    'src/file5.js',
-                    'src/file6.js',
-                    'src/file7.js',
-                    'src/file8.js',
+                inputs: [
+                    'src/**/*.js'
                 ]
             },
         ]
@@ -87,11 +80,8 @@ You can also specify header and/or footer per output file:
                 header: '/* My header */',
                 footer: '/* My Footer */',
                 file: 'concats/concatenated.js' // The output file
-                inputFiles: [
-                    'src/file1.js',
-                    'src/file2.js',
-                    'src/file3.js',
-                    'src/file4.js',
+                inputs: [
+                    'src/**/*.js'
                 ]
             }
         ]
