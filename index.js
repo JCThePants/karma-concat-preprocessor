@@ -70,6 +70,9 @@ function initPreprocessor (basePath, config, logger) {
     for (i = 0; i < outputs.length; i++) {
         var file = getFilePath(basePath, outputs[i].file);
         outputMap[file] = outputs[i];
+
+        // pre concat file so karma will be able to find output file on startup
+        concat(outputs[i], basePath, config);
     }
 
     // preprocessor

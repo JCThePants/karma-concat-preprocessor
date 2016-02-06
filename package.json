@@ -1,6 +1,6 @@
 {
   "name": "karma-concat-preprocessor",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "JCThePants <jcthepants@gmail.com>",
   "license": "MIT",
   "description": "A Karma preprocessor. Concat multiple files into a single file with optional header and footer.",
