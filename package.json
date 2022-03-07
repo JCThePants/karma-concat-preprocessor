@@ -9,6 +9,10 @@
   "bugs": {
     "url" : "https://github.com/JCThePants/karma-concat-preprocessor/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JCThePants/karma-concat-preprocessor.git"
+  },
   "keywords": [
     "karma-plugin",
     "karma-preprocessor",
